@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 all_points = [np.array([x, y, z, w]) for x in range(-1, 2) for y in range(-1, 2) for z in range(-1, 2) for w in range(-1, 2)]
@@ -74,9 +75,21 @@ def is_solution_subseq(pt_idxs):
             return False
     return True
 
-# Generate the list of planes
-# We consider every nonet of points (excluding permutations) and check if they are coplanar
-# There may be a faster algorithm but I can't be bothered to find it right now
+def find_planes_fast():
+    # It is necessary (but not sufficient) that the indexes fall into the same pattern as the solution points, i.e. the difference vectors between consecutive points take at most 2 values
+    # Because of lexicographic ordering, the differences in indexes must group in threes
+    # Each group of three has the same delta, and there is another delta between groups
+    for start_idx in range(len(all_points) - 8):
+        for delta1 in range(1, len(all_points)-start_idx):
+            for delta2 in range(2*delta1+1, len(all_points)-start_idx):
+                idxs = [start_idx + (i//3) * delta2 + (i%3) * delta1 for i in range(9)]
+                assert all(idxs[i] < idxs[i+1] for i in range(8))
+                if idxs[-1] >= len(all_points):
+                    continue
+                if is_solution_subseq_fast(idxs):
+                    print('.', end='', flush = True)
+                    yield [all_points[i] for i in idxs]
+
 def find_planes(start_idx=0, base=[], remaining = 9):
     if remaining != 0:
         # If the base is already not coplanar then adding more points won't help
@@ -89,7 +102,7 @@ def find_planes(start_idx=0, base=[], remaining = 9):
             print('.', end='', flush = True)
             yield [all_points[i] for i in base]
 
-planes = list(find_planes())
+planes = list(find_planes_fast())
 print(len(planes))
 
 for plane in planes:
@@ -139,6 +152,7 @@ while True:
     move_in_turn += 1
     if has_won([noughts, crosses][turn % 2]):
         print(f'{turn_text} wins!')
+        input('Press Enter to exit...')
         break
     if move_in_turn == 3:
         turn += 1
