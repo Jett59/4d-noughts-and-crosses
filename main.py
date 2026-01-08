@@ -34,7 +34,7 @@ def is_solution_subseq_fast(pt_idxs):
         Suppose that \vec{a} and \vec{b} are two consecutive points differing by \vec{d}_3 = c_1\vec{d}_1+c_2\vec{d}_2.
         A similar argument to above proves that neither c_1 nor c_2 is zero (otherwise there would be a point between \vec{a} and \vec{b}, or the sequence of points would not be in ascending order, or \vec{d}_3 would not be distinct).
         Similarly, c_1 and c_2 cannot both be negative as then the first non-zero component of \vec{d}_3 would be negative, contradicting the sortedness of the sequence.
-        To be continued
+        To be continued (I think it's right as it gives the same number of planes as the slow method, which I'm confident in)
     '''
     pts = [all_points[i] for i in pt_idxs]
     deltas = set(tuple(pts[i] - pts[i-1]) for i in range(1, len(pts)))
@@ -100,3 +100,46 @@ for plane in planes:
 # Count the planes that pass through the origin
 origin_planes = [plane for plane in planes if any(np.array_equal(point, np.array([0,0,0,0])) for point in plane)]
 print(f'Planes through origin: {len(origin_planes)}')
+
+# Game starts here
+
+def has_won(mark_idxs):
+    for plane in planes:
+        plane_idxs = [next(i for i, point in enumerate(all_points) if np.array_equal(point, p)) for p in plane]
+        if all(idx in mark_idxs for idx in plane_idxs):
+            return True
+    return False
+
+noughts = []
+crosses = []
+turn = 0
+move_in_turn = 0
+while True:
+    turn_text = 'Noughts' if turn % 2 == 0 else 'Crosses'
+    query = input(f'{turn_text}>')
+    if query == 'help':
+        print("Enter coordinates as `x y z w' where each component is in {-1, 0, 1}")
+        print('Enter "exit" to quit')
+        continue
+    if query == 'exit':
+        break
+    try:
+        coordinates = tuple(int(x) for x in query.split(' '))
+    except:
+        print('Invalid input')
+        continue
+    if len(coordinates) != 4 or any(x not in [-1, 0, 1] for x in coordinates):
+        print('Invalid input')
+        continue
+    idx = next(i for i, point in enumerate(all_points) if np.array_equal(point, np.array(coordinates)))
+    if idx in noughts or idx in crosses:
+        print('Point already occupied')
+        continue
+    [noughts, crosses][turn % 2].append(idx)
+    move_in_turn += 1
+    if has_won([noughts, crosses][turn % 2]):
+        print(f'{turn_text} wins!')
+        break
+    if move_in_turn == 3:
+        turn += 1
+        move_in_turn = 0
